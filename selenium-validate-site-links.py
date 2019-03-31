@@ -16,3 +16,6 @@ for a in driver.find_elements_by_xpath('.//a'):
         if not uri.startswith('https://' + domain) and not uri.startswith('http://' + domain):
             continue
     print(uri)
+
+time.sleep(3)
+driver.quit()
