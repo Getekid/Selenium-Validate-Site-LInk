@@ -21,7 +21,7 @@ class SiteAllLinkValidator:
         self.protocol = protocol
         self.time_to_wait = time_to_wait
         # Initiate a list to store the visited links.
-        self.visited_links = []
+        self.links_visited = []
 
     def validate_link(self, link):
         """Validate a link recursively.
@@ -40,14 +40,14 @@ class SiteAllLinkValidator:
 
         url = urljoin(self.driver.current_url, link)
         # Skip if URL has been visited already.
-        if url in self.visited_links:
+        if self.is_visited(url):
             return ''
 
         # Go to the URL and validate it.
         self.driver.get(url)
         time.sleep(self.time_to_wait)
         assert self.driver.title != self.error_page_title
-        self.visited_links.append(url)
+        self.set_visited(url)
 
         # Iterate through all the a tags of the page.
         for a in self.driver.find_elements_by_xpath('.//a'):
@@ -71,8 +71,28 @@ class SiteAllLinkValidator:
                 return False
         return True
 
+    def is_visited(self, link):
+        """Checks whether the link has been visited already or not.
+        
+        Args:
+            link (str): The link URL to check.
+        
+        Returns:
+            bool: Whether the link is visited or not.
+        """
+        return link in self.links_visited
 
+    def set_visited(self, link):
+        """Adds a link to the visited list.
+
+        Args:
+            link (str): The link URL to check.
+        """
+        self.links_visited.append(link)
+
+
+# For dev purposes.
 driver = webdriver.Chrome()
-validator = SiteAllLinkValidator(driver, 'www.w3.org', '404 error page', 2)
+validator = SiteAllLinkValidator(driver, 'www.w3.org', '404 error page', 0)
 validator.validate_link('https://www.w3.org')
 driver.quit()
