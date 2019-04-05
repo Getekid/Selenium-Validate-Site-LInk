@@ -4,27 +4,23 @@ import re
 
 
 class SiteAllLinkValidator:
+    """Validate the responses of all links in a website
+    (contained in a specific area)"""
 
-    def __init__(self, driver, domain, error_page_title='404 not found', time_to_wait=0, protocol='https://'):
-        """Initiate the class with the following variables
+    def __init__(self, driver, domain):
+        """Initiate the class.
 
         Args:
             driver: The selenium webdriver object.
-            domain (str): The domain of the website.
-            error_page_title (str): The Title of the error page.
-            time_to_wait (int): Number of seconds to wait after each link visit.
-            protocol (str): The protocol to be used, defaults in 'https://'.
+            domain (str): The domain of the website to validate.
         """
         self.driver = driver
-        self.domain = domain
-        self.error_page_title = error_page_title
-        self.protocol = protocol
-        self.time_to_wait = time_to_wait
-        # links_to_visit will contain all links left to be visited as keys,
-        # pointing towards the URL of the page in which it was found.
-        self.links_to_visit = []
-        # Initiate a list to store the visited links.
-        self.links_visited = []
+        self._domain = domain
+        self._error_page_title = '404 not found'
+        self._protocol = 'https://'
+        self._time_to_wait = 0
+        self.links_to_visit = []  # The list of the links left to be visited.
+        self.links_visited = []  # The list to store the visited links.
 
     def validate_all_links(self):
         """Validate a link recursively.
@@ -86,13 +82,46 @@ class SiteAllLinkValidator:
                 return False
         return True
 
-    def set_domain(self, domain):
-        """Sets the domain of the class.
+    @property
+    def domain(self):
+        """The domain of the website to validate."""
+        return self._domain
 
-        Args:
-            domain (str): The new domain.
+    @domain.setter
+    def domain(self, domain):
+        self._domain = domain
+
+    @property
+    def protocol(self):
+        """The protocol to be used. Defaults to 'https://'."""
+        return self._protocol
+
+    @protocol.setter
+    def protocol(self, protocol):
+        self._protocol = protocol
+
+    @property
+    def error_page_title(self):
+        """The title of the error page of the website.
+        The class will use that title to validate error pages.
+        Defaults to '404 not found'
+
+        TODO: Change this into an array to allow multiple page titles.
         """
-        self.domain = domain
+        return self._error_page_title
+
+    @error_page_title.setter
+    def error_page_title(self, error_page_title):
+        self._error_page_title = error_page_title
+
+    @property
+    def time_to_wait(self):
+        """The number of seconds to wait after each link visit. Defaults to 0."""
+        return self._time_to_wait
+
+    @time_to_wait.setter
+    def time_to_wait(self, time_to_wait):
+        self._time_to_wait = time_to_wait
 
     def set_to_visit(self, link):
         """Adds a link to the list (dictionary) with links to visit.
