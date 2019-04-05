@@ -19,6 +19,7 @@ class SiteAllLinkValidator:
         self._error_page_title = '404 not found'
         self._protocol = 'https://'
         self._time_to_wait = 0
+        self._xpath_to_check = './/main'
         self.links_to_visit = []  # The list of the links left to be visited.
         self.links_visited = []  # The list to store the visited links.
 
@@ -31,7 +32,20 @@ class SiteAllLinkValidator:
         Returns nothing the links that are external
         or have been visited already.)
         """
-        self.links_to_visit.append(self.protocol + self.domain)
+        self.driver.get(self.protocol + self.domain)
+        sleep(self.time_to_wait)
+        assert self.driver.title != self.error_page_title
+
+        # Iterate through all the a tags of the page.
+        for a in self.driver.find_elements_by_xpath('.//a'):
+            link = a.get_attribute('href')
+            # Validate the link before adding it to the list to visit.
+            if not self.is_internal(link):
+                continue
+
+            # Add the URL to the link list to visit.
+            url = urljoin(self.driver.current_url, link)
+            self.set_to_visit(url)
         while self.links_to_visit:
             url = self.links_to_visit.pop(0)
 
@@ -45,11 +59,14 @@ class SiteAllLinkValidator:
             # Go to the URL and validate it.
             self.driver.get(url)
             sleep(self.time_to_wait)
-            assert self.driver.title != self.error_page_title
+            try:
+                assert self.driver.title != self.error_page_title
+            except AssertionError:
+                print('Invalid URL: ' + self.driver.current_url)
             self.set_visited(url)
 
             # Iterate through all the a tags of the page.
-            for a in self.driver.find_elements_by_xpath('.//a'):
+            for a in self.driver.find_elements_by_xpath(self.xpath_to_check + '//a'):
                 link = a.get_attribute('href')
                 # Validate the link before adding it to the list to visit.
                 if not self.is_internal(link):
@@ -122,6 +139,15 @@ class SiteAllLinkValidator:
     @time_to_wait.setter
     def time_to_wait(self, time_to_wait):
         self._time_to_wait = time_to_wait
+
+    @property
+    def xpath_to_check(self):
+        """The dom element to check for links to visit. Defaults to './/main'."""
+        return self._xpath_to_check
+
+    @xpath_to_check.setter
+    def xpath_to_check(self, xpath_to_check):
+        self._xpath_to_check = xpath_to_check
 
     def set_to_visit(self, link):
         """Adds a link to the list (dictionary) with links to visit.
