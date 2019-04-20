@@ -1,5 +1,4 @@
 from time import sleep
-from urllib.parse import urljoin
 import re
 
 
@@ -29,8 +28,8 @@ class SiteAllLinkValidator:
         Checks that the link leads to valid page and
         afterwards validates all of its internal ones.
 
-        Returns nothing the links that are external
-        or have been visited already.)
+        Returns nothing if the links are external
+        or have been visited already.
         """
         self.driver.get(self.protocol + self.domain)
         sleep(self.time_to_wait)
@@ -38,26 +37,23 @@ class SiteAllLinkValidator:
 
         # Iterate through all the a tags of the page.
         for a in self.driver.find_elements_by_xpath('.//a'):
-            link = a.get_attribute('href')
-            # Validate the link before adding it to the list to visit.
-            if not self.is_internal(link):
+            url = self.get_relative_url(a.get_attribute('href'))
+            # Validate the URL before adding it to the list to visit.
+            if not url:
                 continue
 
-            # Add the URL to the link list to visit.
-            url = urljoin(self.driver.current_url, link)
+            # Add the URL to the list to visit.
             self.set_to_visit(url)
+        # Iterate through the links to visit.
         while self.links_to_visit:
             url = self.links_to_visit.pop(0)
 
-            if not self.is_internal(url):
-                continue
-
-            # Skip if URL has been visited already.
+            # Skip if the URL has been visited already.
             if self.is_visited(url):
                 continue
 
             # Go to the URL and validate it.
-            self.driver.get(url)
+            self.driver.get(self.protocol + self.domain + url)
             sleep(self.time_to_wait)
             try:
                 assert self.driver.title != self.error_page_title
@@ -67,12 +63,11 @@ class SiteAllLinkValidator:
 
             # Iterate through all the a tags of the page.
             for a in self.driver.find_elements_by_xpath(self.xpath_to_check + '//a'):
-                link = a.get_attribute('href')
+                url = self.get_relative_url(a.get_attribute('href'))
                 # Validate the link before adding it to the list to visit.
-                if not self.is_internal(link):
+                if not url:
                     continue
 
-                url = urljoin(self.driver.current_url, link)
                 # Skip if URL has been visited already.
                 if self.is_visited(url):
                     continue
@@ -106,6 +101,9 @@ class SiteAllLinkValidator:
 
     @domain.setter
     def domain(self, domain):
+        # Strip the trailing slash, if any.
+        if domain.endswith('/'):
+            domain = domain[:-1]
         self._domain = domain
 
     @property
@@ -159,10 +157,10 @@ class SiteAllLinkValidator:
 
     def is_visited(self, link):
         """Checks whether the link has been visited already or not.
-        
+
         Args:
             link (str): The link URL to check.
-        
+
         Returns:
             bool: Whether the link is visited or not.
         """
@@ -175,16 +173,39 @@ class SiteAllLinkValidator:
             link (str): The link URL to check.
         """
         self.links_visited.append(link)
-    
+
     def get_domain_strip_www(self):
         """Returns the domain stripped of any
         'www.' string it may have in the beginning.
-        
+
         Returns:
             domain_no_www (str): The domain without 'www.'
         """
         domain_no_www = self.domain
         if domain_no_www.startswith('www.'):
             domain_no_www = self.domain[4:]
-        
+
         return domain_no_www
+
+    def get_relative_url(self, link):
+        """Returns the relative URL from a given internal link.
+        Also for consistency the last slash ("/") is stripped, if any.
+
+        Example:
+            >>> print(self.get_relative_url("https://w3c.org/standards/"))
+            "/standards".
+
+        Args:
+            link (str): The link URL.
+        Returns:
+            str|bool: The relative URL or False if link is not internal.
+        """
+        if not self.is_internal(link):
+            return False
+        if not link.startswith('https://') and not link.startswith('http://'):
+            relative_url = link
+        else:
+            relative_url = link.split(self.get_domain_strip_www(), 1)[1]
+        if relative_url.endswith("/"):
+            relative_url = relative_url[:-1]
+        return relative_url
