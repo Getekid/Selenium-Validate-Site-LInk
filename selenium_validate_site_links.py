@@ -34,8 +34,7 @@ class SiteAllLinkValidator:
         if not self.visit_url(self.protocol + self.domain):
             return
         sleep(self.time_to_wait)
-        assert self.driver.title != self.error_page_title
-
+        self.validate_current_page()
         self.collect_current_page_links_to_visit(True)
 
         # Iterate through the links to visit.
@@ -46,11 +45,7 @@ class SiteAllLinkValidator:
             if not self.visit_url(self.protocol + self.domain + url):
                 continue
             sleep(self.time_to_wait)
-            try:
-                assert self.driver.title != self.error_page_title
-            except AssertionError:
-                print('Invalid URL: ' + self.driver.current_url)
-
+            self.validate_current_page()
             self.collect_current_page_links_to_visit()
 
     def is_internal(self, uri):
@@ -143,6 +138,13 @@ class SiteAllLinkValidator:
         # Nothing went wrong so set the URL as visited return True.
         self.set_visited(url)
         return True
+
+    def validate_current_page(self):
+        """Validates that the current page does not show an error."""
+        try:
+            assert self.driver.title != self.error_page_title
+        except AssertionError:
+            print('Invalid URL: ' + self.driver.current_url)
 
     def collect_current_page_links_to_visit(self, check_full_page=False):
         """Iterates through all the 'a' tags of the current page,
