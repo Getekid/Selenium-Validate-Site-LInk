@@ -35,15 +35,8 @@ class SiteAllLinkValidator:
         sleep(self.time_to_wait)
         assert self.driver.title != self.error_page_title
 
-        # Iterate through all the a tags of the page.
-        for a in self.driver.find_elements_by_xpath('.//a'):
-            url = self.get_relative_url(a.get_attribute('href'))
-            # Validate the URL before adding it to the list to visit.
-            if not url:
-                continue
+        self.collect_current_page_links_to_visit(True)
 
-            # Add the URL to the list to visit.
-            self.set_to_visit(url)
         # Iterate through the links to visit.
         while self.links_to_visit:
             url = self.links_to_visit.pop(0)
@@ -61,19 +54,7 @@ class SiteAllLinkValidator:
                 print('Invalid URL: ' + self.driver.current_url)
             self.set_visited(url)
 
-            # Iterate through all the a tags of the page.
-            for a in self.driver.find_elements_by_xpath(self.xpath_to_check + '//a'):
-                url = self.get_relative_url(a.get_attribute('href'))
-                # Validate the link before adding it to the list to visit.
-                if not url:
-                    continue
-
-                # Skip if URL has been visited already.
-                if self.is_visited(url):
-                    continue
-
-                # Add the URL to the link list to visit.
-                self.set_to_visit(url)
+            self.collect_current_page_links_to_visit()
 
     def is_internal(self, uri):
         """Checks whether the uri is an internal domain,
@@ -146,6 +127,30 @@ class SiteAllLinkValidator:
     @xpath_to_check.setter
     def xpath_to_check(self, xpath_to_check):
         self._xpath_to_check = xpath_to_check
+
+    def collect_current_page_links_to_visit(self, check_full_page=False):
+        """Iterates through all the 'a' tags of the current page,
+        collects those not visited already and sets them to visit.
+
+        By default, the function will gather all tags within
+        xpath_to_check. If used with check_full_page=True then
+        the full page will be checked.
+
+        Args:
+            check_full_page (bool): Whether to check the full page
+                or within xpath_to_check. Defaults to False.
+        """
+        xpath = './/a' if check_full_page else self.xpath_to_check + '//a'
+        for a in self.driver.find_elements_by_xpath(xpath):
+            url = self.get_relative_url(a.get_attribute('href'))
+            # Validate the URL before adding it to the list to visit.
+            if not url:
+                continue
+            # Skip if URL has been visited already.
+            if self.is_visited(url):
+                continue
+            # Add the URL to the list to visit.
+            self.set_to_visit(url)
 
     def set_to_visit(self, link):
         """Adds a link to the list (dictionary) with links to visit.
