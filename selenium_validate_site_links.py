@@ -22,51 +22,6 @@ class SiteAllLinkValidator:
         self.links_to_visit = []  # The list of the links left to be visited.
         self.links_visited = []  # The list to store the visited links.
 
-    def validate_all_links(self):
-        """Validate a link recursively.
-
-        Checks that the link leads to valid page and
-        afterwards validates all of its internal ones.
-
-        Returns nothing if the links are external
-        or have been visited already.
-        """
-        if not self.visit_url(self.protocol + self.domain):
-            return
-        sleep(self.time_to_wait)
-        self.validate_current_page()
-        self.collect_current_page_links_to_visit(True)
-
-        # Iterate through the links to visit.
-        while self.links_to_visit:
-            url = self.links_to_visit.pop(0)
-
-            # Go to the URL and validate it.
-            if not self.visit_url(self.protocol + self.domain + url):
-                continue
-            sleep(self.time_to_wait)
-            self.validate_current_page()
-            self.collect_current_page_links_to_visit()
-
-    def is_internal(self, uri):
-        """Checks whether the uri is an internal domain,
-        either relative or starts with the domain.
-
-        Args:
-            uri (str): The URI to be checked.
-
-        Returns:
-            bool: Whether the URI is internal or not.
-        """
-        if not isinstance(uri, str):
-            return False
-        if uri.startswith('https://') or uri.startswith('http://'):
-            # Remove any 'www.' from the beginning of the domain to
-            # allow checking both formats later in the Regex check.
-            if re.match('https?://(www.)?' + self.get_domain_strip_www(), uri) is None:
-                return False
-        return True
-
     @property
     def domain(self):
         """The domain of the website to validate."""
@@ -120,6 +75,59 @@ class SiteAllLinkValidator:
     def xpath_to_check(self, xpath_to_check):
         self._xpath_to_check = xpath_to_check
 
+    def set_to_visit(self, link):
+        """Adds a link to the list (dictionary) with links to visit.
+
+        Args:
+            link (str): The link URL to check.
+        """
+        self.links_to_visit.append(link)
+
+    def set_visited(self, link):
+        """Adds a link to the visited list.
+
+        Args:
+            link (str): The link URL to check.
+        """
+        self.links_visited.append(link)
+
+    def is_visited(self, link):
+        """Checks whether the link has been visited already or not.
+
+        Args:
+            link (str): The link URL to check.
+
+        Returns:
+            bool: Whether the link is visited or not.
+        """
+        return link in self.links_visited
+
+    def validate_all_links(self):
+        """Validate a link recursively.
+
+        Checks that the link leads to valid page and
+        afterwards validates all of its internal ones.
+
+        Returns nothing if the links are external
+        or have been visited already.
+        """
+        if not self.visit_url(self.protocol + self.domain):
+            return
+        sleep(self.time_to_wait)
+        self.validate_current_page()
+        self.collect_current_page_links_to_visit(True)
+
+        # Iterate through the links to visit.
+        while self.links_to_visit:
+            url = self.links_to_visit.pop(0)
+
+            # Go to the URL and validate it.
+            if not self.visit_url(self.protocol + self.domain + url):
+                continue
+            sleep(self.time_to_wait)
+            self.validate_current_page()
+            self.collect_current_page_links_to_visit()
+
     def visit_url(self, url):
         """Visits the URL given.
 
@@ -170,46 +178,6 @@ class SiteAllLinkValidator:
             # Add the URL to the list to visit.
             self.set_to_visit(url)
 
-    def set_to_visit(self, link):
-        """Adds a link to the list (dictionary) with links to visit.
-
-        Args:
-            link (str): The link URL to check.
-        """
-        self.links_to_visit.append(link)
-
-    def is_visited(self, link):
-        """Checks whether the link has been visited already or not.
-
-        Args:
-            link (str): The link URL to check.
-
-        Returns:
-            bool: Whether the link is visited or not.
-        """
-        return link in self.links_visited
-
-    def set_visited(self, link):
-        """Adds a link to the visited list.
-
-        Args:
-            link (str): The link URL to check.
-        """
-        self.links_visited.append(link)
-
-    def get_domain_strip_www(self):
-        """Returns the domain stripped of any
-        'www.' string it may have in the beginning.
-
-        Returns:
-            domain_no_www (str): The domain without 'www.'
-        """
-        domain_no_www = self.domain
-        if domain_no_www.startswith('www.'):
-            domain_no_www = self.domain[4:]
-
-        return domain_no_www
-
     def get_relative_url(self, link):
         """Returns the relative URL from a given internal link.
         Also for consistency the last slash ("/") is stripped, if any.
@@ -232,3 +200,35 @@ class SiteAllLinkValidator:
         if relative_url.endswith("/"):
             relative_url = relative_url[:-1]
         return relative_url
+
+    def get_domain_strip_www(self):
+        """Returns the domain stripped of any
+        'www.' string it may have in the beginning.
+
+        Returns:
+            domain_no_www (str): The domain without 'www.'
+        """
+        domain_no_www = self.domain
+        if domain_no_www.startswith('www.'):
+            domain_no_www = self.domain[4:]
+
+        return domain_no_www
+
+    def is_internal(self, uri):
+        """Checks whether the uri is an internal domain,
+        either relative or starts with the domain.
+
+        Args:
+            uri (str): The URI to be checked.
+
+        Returns:
+            bool: Whether the URI is internal or not.
+        """
+        if not isinstance(uri, str):
+            return False
+        if uri.startswith('https://') or uri.startswith('http://'):
+            # Remove any 'www.' from the beginning of the domain to
+            # allow checking both formats later in the Regex check.
+            if re.match('https?://(www.)?' + self.get_domain_strip_www(), uri) is None:
+                return False
+        return True
