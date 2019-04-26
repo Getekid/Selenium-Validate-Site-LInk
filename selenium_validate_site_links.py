@@ -31,7 +31,8 @@ class SiteAllLinkValidator:
         Returns nothing if the links are external
         or have been visited already.
         """
-        self.driver.get(self.protocol + self.domain)
+        if not self.visit_url(self.protocol + self.domain):
+            return
         sleep(self.time_to_wait)
         assert self.driver.title != self.error_page_title
 
@@ -41,18 +42,14 @@ class SiteAllLinkValidator:
         while self.links_to_visit:
             url = self.links_to_visit.pop(0)
 
-            # Skip if the URL has been visited already.
-            if self.is_visited(url):
-                continue
-
             # Go to the URL and validate it.
-            self.driver.get(self.protocol + self.domain + url)
+            if not self.visit_url(self.protocol + self.domain + url):
+                continue
             sleep(self.time_to_wait)
             try:
                 assert self.driver.title != self.error_page_title
             except AssertionError:
                 print('Invalid URL: ' + self.driver.current_url)
-            self.set_visited(url)
 
             self.collect_current_page_links_to_visit()
 
@@ -127,6 +124,25 @@ class SiteAllLinkValidator:
     @xpath_to_check.setter
     def xpath_to_check(self, xpath_to_check):
         self._xpath_to_check = xpath_to_check
+
+    def visit_url(self, url):
+        """Visits the URL given.
+
+        Args:
+            url (str): The url to visit.
+
+        Returns:
+            bool: True if the URL was visited successfully.
+                False in case the link is visited already.
+        """
+        # Stop if the URL has been visited already.
+        if self.is_visited(url):
+            return False
+        # Go the URL.
+        self.driver.get(url)
+        # Nothing went wrong so set the URL as visited return True.
+        self.set_visited(url)
+        return True
 
     def collect_current_page_links_to_visit(self, check_full_page=False):
         """Iterates through all the 'a' tags of the current page,
