@@ -154,7 +154,7 @@ class SiteAllLinkValidator:
         # Go the URL.
         self.driver.get(url)
         # Nothing went wrong so set the URL as visited return True.
-        self.set_visited(url)
+        self.set_visited(self.get_relative_url(url))
         return True
 
     def validate_current_page(self):
