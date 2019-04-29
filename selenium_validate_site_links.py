@@ -19,6 +19,7 @@ class SiteAllLinkValidator:
         self._protocol = 'https://'
         self._time_to_wait = 0
         self._xpath_to_check = './/main'
+        self._check_anchors = False
         self.links_to_visit = []  # The list of the links left to be visited.
         self.links_visited = []  # The list to store the visited links.
 
@@ -74,6 +75,15 @@ class SiteAllLinkValidator:
     @xpath_to_check.setter
     def xpath_to_check(self, xpath_to_check):
         self._xpath_to_check = xpath_to_check
+
+    @property
+    def check_anchors(self):
+        """Whether to check the links containing an anchor or not. Defaults to False"""
+        return self._check_anchors
+
+    @check_anchors.setter
+    def check_anchors(self, check_anchors):
+        self._check_anchors = check_anchors
 
     def set_to_visit(self, link):
         """Adds a link to the list (dictionary) with links to visit.
@@ -169,6 +179,9 @@ class SiteAllLinkValidator:
         xpath = './/a' if check_full_page else self.xpath_to_check + '//a'
         for a in self.driver.find_elements_by_xpath(xpath):
             url = self.get_relative_url(a.get_attribute('href'))
+            # Remove any anchors if needed.
+            if not self.check_anchors:
+                url = self.get_link_no_anchor(url)
             # Validate the URL before adding it to the list to visit.
             if not url:
                 continue
@@ -200,6 +213,21 @@ class SiteAllLinkValidator:
         if relative_url.endswith("/"):
             relative_url = relative_url[:-1]
         return relative_url
+
+    @staticmethod
+    def get_link_no_anchor(link):
+        """Returns a link without any anchors.
+
+        Args:
+            link (str): The link URL.
+
+        Returns:
+            str|bool: The link without any anchors or False when
+                input is not a string.
+        """
+        if not isinstance(link, str):
+            return False
+        return link.split('#', 1)[0]
 
     def get_domain_strip_www(self):
         """Returns the domain stripped of any
