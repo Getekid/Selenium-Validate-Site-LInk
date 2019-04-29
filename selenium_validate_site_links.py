@@ -162,7 +162,7 @@ class SiteAllLinkValidator:
         try:
             assert self.driver.title != self.error_page_title
         except AssertionError:
-            print('Invalid URL: ' + self.driver.current_url)
+            print('Error page was found at URL: ' + self.driver.current_url)
 
     def collect_current_page_links_to_visit(self, check_full_page=False):
         """Iterates through all the 'a' tags of the current page,
@@ -193,7 +193,7 @@ class SiteAllLinkValidator:
 
     def get_relative_url(self, link):
         """Returns the relative URL from a given internal link.
-        Also for consistency the last slash ("/") is stripped, if any.
+        Also, for consistency, the last slash ("/") is stripped, if any.
 
         Example:
             >>> print(self.get_relative_url("https://w3c.org/standards/"))
