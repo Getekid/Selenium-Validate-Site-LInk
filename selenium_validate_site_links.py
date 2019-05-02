@@ -179,9 +179,6 @@ class SiteAllLinkValidator:
         xpath = './/a' if check_full_page else self.xpath_to_check + '//a'
         for a in self.driver.find_elements_by_xpath(xpath):
             url = self.get_relative_url(a.get_attribute('href'))
-            # Remove any anchors if needed.
-            if not self.check_anchors:
-                url = self.get_link_no_anchor(url)
             # Validate the URL before adding it to the list to visit.
             if not url:
                 continue
@@ -210,9 +207,25 @@ class SiteAllLinkValidator:
             relative_url = link
         else:
             relative_url = link.split(self.get_domain_strip_www(), 1)[1]
+        # Remove any anchors if needed.
+        if not self.check_anchors:
+            relative_url = self.get_link_no_anchor(relative_url)
         if relative_url.endswith("/"):
             relative_url = relative_url[:-1]
         return relative_url
+
+    def get_domain_strip_www(self):
+        """Returns the domain stripped of any
+        'www.' string it may have in the beginning.
+
+        Returns:
+            domain_no_www (str): The domain without 'www.'
+        """
+        domain_no_www = self.domain
+        if domain_no_www.startswith('www.'):
+            domain_no_www = self.domain[4:]
+
+        return domain_no_www
 
     @staticmethod
     def get_link_no_anchor(link):
@@ -228,19 +241,6 @@ class SiteAllLinkValidator:
         if not isinstance(link, str):
             return False
         return link.split('#', 1)[0]
-
-    def get_domain_strip_www(self):
-        """Returns the domain stripped of any
-        'www.' string it may have in the beginning.
-
-        Returns:
-            domain_no_www (str): The domain without 'www.'
-        """
-        domain_no_www = self.domain
-        if domain_no_www.startswith('www.'):
-            domain_no_www = self.domain[4:]
-
-        return domain_no_www
 
     def is_internal(self, uri):
         """Checks whether the uri is an internal domain,
