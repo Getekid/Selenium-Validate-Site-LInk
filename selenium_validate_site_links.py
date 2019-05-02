@@ -1,5 +1,6 @@
 from time import sleep
 import re
+from selenium.common.exceptions import WebDriverException, NoSuchWindowException, StaleElementReferenceException
 
 
 class SiteAllLinkValidator:
@@ -203,7 +204,7 @@ class SiteAllLinkValidator:
         """
         if not self.is_internal(link):
             return False
-        if not link.startswith('https://') and not link.startswith('http://'):
+        if self.is_relative_url(link):
             relative_url = link
         else:
             relative_url = link.split(self.get_domain_strip_www(), 1)[1]
@@ -254,9 +255,15 @@ class SiteAllLinkValidator:
         """
         if not isinstance(uri, str):
             return False
-        if uri.startswith('https://') or uri.startswith('http://'):
+        if not self.is_relative_url(uri):
             # Remove any 'www.' from the beginning of the domain to
             # allow checking both formats later in the Regex check.
             if re.match('https?://(www.)?' + self.get_domain_strip_www(), uri) is None:
                 return False
         return True
+
+    @staticmethod
+    def is_relative_url(uri):
+        if not uri.startswith('https://') and not uri.startswith('http://'):
+            return True
+        return False
