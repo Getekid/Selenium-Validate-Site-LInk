@@ -1,6 +1,6 @@
 from time import sleep
 import re
-from selenium.common.exceptions import WebDriverException, NoSuchWindowException, StaleElementReferenceException
+from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
 
 
 class SiteAllLinkValidator:
@@ -155,7 +155,15 @@ class SiteAllLinkValidator:
         if self.is_visited(relative_url):
             return False
         # Go to the URL.
-        self.driver.get(url)
+        try:
+            self.driver.get(url)
+        except WebDriverException as exception:
+            if url == '':
+                print('Error loading empty url.')
+            else:
+                print('Error loading url: ' + url)
+            print(exception.msg)
+            return False
         # Nothing went wrong so set the URL as visited and return True.
         self.set_visited(relative_url)
         return True
@@ -181,8 +189,18 @@ class SiteAllLinkValidator:
         """
         xpath = './/a' if check_full_page else self.xpath_to_check + '//a'
         for a in self.driver.find_elements_by_xpath(xpath):
-            url = self.get_relative_url(a.get_attribute('href'))
-            # Validate the URL before adding it to the list to visit.
+            # In case of an error while getting the link, print the Exception message and continue.
+            try:
+                link = a.get_attribute('href')
+            except StaleElementReferenceException as exception:
+                print('Invalid "a" tag has been skipped in URL: ' + self.driver.current_url)
+                print(exception.msg)
+                continue
+            # Validate the link before adding it to the list to visit.
+            if link == '':
+                print('Empty "a" tag was found in URL: ' + self.driver.current_url)
+                continue
+            url = self.get_relative_url(link)
             if not url:
                 continue
             # Skip if URL has been visited already.
