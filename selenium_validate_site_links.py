@@ -151,8 +151,8 @@ class SiteAllLinkValidator:
         """
         # Get the relative URL for managing the visited links status.
         relative_url = self.get_relative_url(url)
-        # Stop if the URL has been visited already.
-        if self.is_visited(relative_url):
+        # Stop if the URL is not a link or has been visited already.
+        if relative_url is False or self.is_visited(relative_url):
             return False
         # Go to the URL.
         try:
@@ -224,7 +224,7 @@ class SiteAllLinkValidator:
         """
         if not self.is_internal(link):
             return False
-        if self.is_relative_url(link):
+        if not self.is_absolute_url(link):
             relative_url = link
         else:
             relative_url = link.split(self.get_domain_strip_www(), 1)[1]
@@ -273,9 +273,9 @@ class SiteAllLinkValidator:
         Returns:
             bool: Whether the URI is internal or not.
         """
-        if not isinstance(uri, str):
+        if not isinstance(uri, str) or not self.is_link(uri):
             return False
-        if not self.is_relative_url(uri):
+        if self.is_absolute_url(uri):
             # Remove any 'www.' from the beginning of the domain to
             # allow checking both formats later in the Regex check.
             if re.match('https?://(www.)?' + self.get_domain_strip_www(), uri) is None:
@@ -283,7 +283,31 @@ class SiteAllLinkValidator:
         return True
 
     @staticmethod
-    def is_relative_url(uri):
-        if not uri.startswith('https://') and not uri.startswith('http://'):
-            return True
-        return False
+    def is_absolute_url(uri):
+        """Checks whether the given URI is an absolute URL or not.
+
+        Args:
+            uri (str): The given URI.
+
+        Returns:
+            bool: True is the URI is an absolute URL, False otherwise.
+        """
+        if not isinstance(uri, str):
+            return False
+        return re.match('https?://', uri)
+
+    @staticmethod
+    def is_link(uri):
+        """Checks whether the given URI is a link or not.
+
+        Args:
+            uri (str): The given URI.
+
+        Returns:
+            bool: True if the uri is a link, False otherwise.
+        """
+        if not isinstance(uri, str):
+            return False
+        if uri == '':
+            return False
+        return not re.match('((mailto)|(tel)|(ftp)):', uri)
