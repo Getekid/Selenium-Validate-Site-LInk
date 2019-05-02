@@ -149,13 +149,15 @@ class SiteAllLinkValidator:
             bool: True if the URL was visited successfully.
                 False in case the link is visited already.
         """
+        # Get the relative URL for managing the visited links status.
+        relative_url = self.get_relative_url(url)
         # Stop if the URL has been visited already.
-        if self.is_visited(url):
+        if self.is_visited(relative_url):
             return False
-        # Go the URL.
+        # Go to the URL.
         self.driver.get(url)
-        # Nothing went wrong so set the URL as visited return True.
-        self.set_visited(self.get_relative_url(url))
+        # Nothing went wrong so set the URL as visited and return True.
+        self.set_visited(relative_url)
         return True
 
     def validate_current_page(self):
