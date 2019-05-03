@@ -175,13 +175,11 @@ class SiteAllLinkValidator:
         if relative_url is False or self.is_visited(relative_url):
             return False
         # Go to the URL.
+        link = self.protocol + self.domain + relative_url
         try:
-            self.driver.get(url)
+            self.driver.get(link)
         except WebDriverException as exception:
-            if url == '':
-                print('Error loading empty url.')
-            else:
-                print('Error loading url: ' + url)
+            print('Error loading url: ' + url + ', attempted to go to: ' + link)
             print(exception.msg)
             return False
         # Nothing went wrong so set the URL as visited and return True.
