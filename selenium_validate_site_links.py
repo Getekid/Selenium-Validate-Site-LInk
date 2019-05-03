@@ -18,9 +18,11 @@ class SiteAllLinkValidator:
         self._domain = domain
         self._error_page_title = '404 not found'
         self._protocol = 'https://'
+        self._starting_url = ''
         self._time_to_wait = 0
         self._xpath_to_check = './/main'
         self._check_anchors = False
+        self._regex_to_check = ''
         self.links_to_visit = []  # The list of the links left to be visited.
         self.links_visited = []  # The list to store the visited links.
 
@@ -44,6 +46,15 @@ class SiteAllLinkValidator:
     @protocol.setter
     def protocol(self, protocol):
         self._protocol = protocol
+
+    @property
+    def starting_url(self):
+        """The URL to start checking the links."""
+        return self._starting_url
+
+    @starting_url.setter
+    def starting_url(self, starting_url):
+        self._starting_url = self.get_relative_url(starting_url)
 
     @property
     def error_page_title(self):
@@ -86,6 +97,15 @@ class SiteAllLinkValidator:
     def check_anchors(self, check_anchors):
         self._check_anchors = check_anchors
 
+    @property
+    def regex_to_check(self):
+        """A Regular expression where a matching URL will be visited to be checked."""
+        return self._regex_to_check
+
+    @regex_to_check.setter
+    def regex_to_check(self, regex_to_check):
+        self._regex_to_check = regex_to_check
+
     def set_to_visit(self, link):
         """Adds a link to the list (dictionary) with links to visit.
 
@@ -122,7 +142,7 @@ class SiteAllLinkValidator:
         Returns nothing if the links are external
         or have been visited already.
         """
-        if not self.visit_url(self.protocol + self.domain):
+        if not self.visit_url(self.protocol + self.domain + self.starting_url):
             return
         sleep(self.time_to_wait)
         self.validate_current_page()
@@ -203,6 +223,8 @@ class SiteAllLinkValidator:
             url = self.get_relative_url(link)
             if not url:
                 continue
+            if not self.is_for_check(link):
+                continue
             # Skip if URL has been visited already.
             if self.is_visited(url):
                 continue
@@ -281,6 +303,23 @@ class SiteAllLinkValidator:
             if re.match('https?://(www.)?' + self.get_domain_strip_www(), uri) is None:
                 return False
         return True
+
+    def is_for_check(self, uri):
+        """Checks whether the uri is eligible to be checked
+        according to the Regular expression set.
+
+        Args:
+            uri (str): The URI to be checked.
+
+        Returns:
+            bool: True if the URI matched the class' regex_to_check property, False otherwise.
+                Also False when the regex_to_check property is not set or False.
+        """
+        if not self.regex_to_check:
+            # If no valid Regex has been set therefore check all links.
+            return True
+        url = self.get_relative_url(uri)
+        return bool(re.match(self.regex_to_check, url))
 
     @staticmethod
     def is_absolute_url(uri):
