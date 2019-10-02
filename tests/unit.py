@@ -132,6 +132,7 @@ class TestSiteAllLinkValidator(unittest.TestCase):
         self.validator.regex_to_check = '/?standards'
         self.assertTrue(self.validator.is_for_check('standards/'))
         self.assertFalse(self.validator.is_for_check('participate/'))
+        self.assertFalse(self.validator.is_for_check('https://google.com/search'))
 
     def test_is_absolute_url(self):
         self.assertFalse(self.validator.is_absolute_url('/standards'))

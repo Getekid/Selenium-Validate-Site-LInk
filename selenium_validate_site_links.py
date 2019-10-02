@@ -317,7 +317,8 @@ class SiteAllLinkValidator:
             # If no valid Regex has been set therefore check all links.
             return True
         url = self.get_relative_url(uri)
-        return bool(re.match(self.regex_to_check, url))
+        if url:
+            return bool(re.match(self.regex_to_check, url))
 
     @staticmethod
     def is_absolute_url(uri):
