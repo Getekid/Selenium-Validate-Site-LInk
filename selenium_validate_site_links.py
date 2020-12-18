@@ -25,6 +25,25 @@ class SiteAllLinkValidator:
         self._regex_to_check = ''
         self.links_to_visit = []  # The list of the links left to be visited.
         self.links_visited = []  # The list to store the visited links.
+        self.esn_error_pages = [
+            'about:blank',
+            'https://esn.org/content/national-level',
+            'https://esn.org/content/international-board',
+            'https://esn.org/star-awards',
+            'https://esn.org/%23',
+            'https://esn.org/ESNSurvey/automatic-recognition-full-degrees',
+            'https://esn.org/~sigfried/newsite/ESNSurvey',
+            'https://esn.org/content/mission-vision-values',
+            'https://esn.org/content/section-information',
+            'https://esn.org/content/research-study-visas-and-residence-permits',
+            'https://esn.org/researchreleases',
+            'https://esn.org/sites/default/files/Reaction%20of%20the%20Erasmus%20Student%20Network%20AISBL%20to%20the%20EU2020%20Consultation.pdf',
+            'https://esn.org/survey',
+            'https://esn.org/publications/ESNSurvey2014',
+            'https://esn.org/content/prime-problems-recognition-making-erasmus',
+            'https://esn.org/content/students-guidebook',
+            'https://esn.org/webform/student-guidebook-order'
+        ]
 
     @property
     def domain(self):
@@ -145,7 +164,7 @@ class SiteAllLinkValidator:
         if not self.visit_url(self.protocol + self.domain + self.starting_url):
             return
         sleep(self.time_to_wait)
-        self.validate_current_page()
+        # self.validate_current_page()
         self.collect_current_page_links_to_visit(True)
 
         # Iterate through the links to visit.
@@ -156,7 +175,7 @@ class SiteAllLinkValidator:
             if not self.visit_url(self.protocol + self.domain + url):
                 continue
             sleep(self.time_to_wait)
-            self.validate_current_page()
+            # self.validate_current_page()
             self.collect_current_page_links_to_visit()
 
     def visit_url(self, url):
@@ -179,8 +198,8 @@ class SiteAllLinkValidator:
         try:
             self.driver.get(link)
         except WebDriverException as exception:
-            print('Error loading url: ' + url + ', attempted to go to: ' + link)
-            print(exception.msg)
+            # print('Error loading url: ' + url + ', attempted to go to: ' + link)
+            # print(exception.msg)
             return False
         # Nothing went wrong so set the URL as visited and return True.
         self.set_visited(relative_url)
@@ -211,18 +230,20 @@ class SiteAllLinkValidator:
             try:
                 link = a.get_attribute('href')
             except StaleElementReferenceException as exception:
-                print('Invalid "a" tag has been skipped in URL: ' + self.driver.current_url)
-                print(exception.msg)
+                # print('Invalid "a" tag has been skipped in URL: ' + self.driver.current_url)
+                # print(exception.msg)
                 continue
             # Validate the link before adding it to the list to visit.
             if link == '':
-                print('Empty "a" tag was found in URL: ' + self.driver.current_url)
+                # print('Empty "a" tag was found in URL: ' + self.driver.current_url)
                 continue
             url = self.get_relative_url(link)
             if not url:
                 continue
             if not self.is_for_check(link):
                 continue
+            if url in self.esn_error_pages:
+                print('Error link "' + link + '" was found in page: ' + self.driver.current_url)
             # Skip if URL has been visited already.
             if self.is_visited(url):
                 continue

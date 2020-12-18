@@ -41,6 +41,14 @@ class TestSiteAllLinkValidatorWebdriver(unittest.TestCase):
         self.assertEqual(len(self.validator.links_visited), 11)
         self.assertEqual(self.validator.links_visited[0], self.validator.starting_url)
 
+    def test_validate_esn_org(self):
+        self.validator.domain = 'esn.org'
+        self.validator.error_page_title = 'Page not found | Erasmus Student Network'
+        self.validator.xpath_to_check = './/div[@id="main"]'
+        self.validator.regex_to_check = '(?!/?blog)'
+        # self.validator.check_anchors = True
+        self.validator.validate_all_links()
+
 
 if __name__ == '__main__':
     unittest.main()
